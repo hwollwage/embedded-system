@@ -9,3 +9,6 @@ pyvista
 pyqt6 
 pyserial 
 numpy
+
+mount / updt littlefs
+~/.platformio/penv/bin/pio run -t uploadfs
