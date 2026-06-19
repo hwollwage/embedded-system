@@ -8,14 +8,15 @@
 #include <LittleFS.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
+#include <PubSubClient.h> // test with "mosquitto_pub -h broker.hivemq.com -t lamp/test -m ON"
 
 IPAddress local_IP(10,168,125,65);
 IPAddress gateway(10,168,125,63);
 IPAddress subnet(255, 255, 255, 0);
 IPAddress primaryDNS(1,1,1,1);
 
-const char* ssid = "iot_test";
-const char* pass = "abc12345";
+const char* ssid = "SSID__";
+const char* pass = "PASS__";
 
 const uint16_t SCREEN_WIDTH = 128;
 const uint16_t SCREEN_HEIGHT = 64;
@@ -24,6 +25,8 @@ Adafruit_MPU6050 mpu;
 WebServer server(80);
 WebSocketsServer webSocket(81);
 Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+WiFiClient esp32client;
+PubSubClient client(esp32client);
 
 constexpr uint8_t led1 = 25;
 constexpr uint8_t led2 = 26;
@@ -31,6 +34,61 @@ constexpr uint8_t buzzer = 27;
 
 float rollFiltered = 0;
 float pitchFiltered = 0;
+
+void setupWifi() {
+  Serial.println();
+  Serial.printf("connecting to : %s\n", ssid);
+
+  WiFi.begin(ssid, pass);
+  
+  if(!WiFi.config(local_IP, gateway, subnet)) {
+    Serial.println("static ip failed");
+  }
+
+  while(WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println("your local ip : ");
+  Serial.println(WiFi.localIP());
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  String msg = "";
+  
+  for(unsigned int i = 0; i < length; i++) {
+    msg += (char)payload[i];
+  }
+
+  Serial.print("topic : ");
+  Serial.println(topic);
+  Serial.print("message : ");
+  Serial.println(msg);
+
+  if(msg == "ON") {
+    Serial.println("led turned ON");
+    digitalWrite(led1, HIGH);
+  }
+  if(msg == "OFF") {
+    Serial.println("led turned OFF");
+    digitalWrite(led1, LOW);
+  }
+}
+
+void reconnect() {
+  while(!client.connected()) {
+    Serial.println("connecting to MQTT...");
+
+    if(client.connect("esp32-test")) {
+      Serial.println("connected");
+      client.subscribe("lamp/test");
+    }else {
+      Serial.print("failed to reconnect = ");
+      Serial.println(client.state());
+      delay(5000);
+    }
+  }
+}
 
 void setup() {
   Serial.begin(115200);
@@ -45,23 +103,18 @@ void setup() {
     return;
   }
 
-  WiFi.begin(ssid, pass);
-  if(!WiFi.config(local_IP, gateway, subnet)) {
-    Serial.println("static ip failed");
-  }
+  setupWifi();
 
-  while(WiFi.status() != WL_CONNECTED) {
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.println("your local ip : ");
-  Serial.println(WiFi.localIP());
-  
   webSocket.begin();
   
+  client.setServer("broker.hivemq.com", 1883);
+  client.setCallback(callback);
+  reconnect();
+
   pinMode(led1, OUTPUT);
   pinMode(led2, OUTPUT);
   pinMode(buzzer, OUTPUT);
+  digitalWrite(led1, LOW);
 
   if (!mpu.begin()) {
       Serial.println("MPU6050 not found");
@@ -120,6 +173,12 @@ void setup() {
 void loop() {
   server.handleClient();
   webSocket.loop();
+  if(!client.connected()) {
+    reconnect();
+  }
+
+  client.loop();
+
   sensors_event_t accel, gyro, temp;
 
   mpu.getEvent(&accel, &gyro, &temp);
