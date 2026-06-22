@@ -10,13 +10,14 @@
 #include <Adafruit_GFX.h>
 #include <PubSubClient.h> // test with "mosquitto_pub -h broker.hivemq.com -t lamp/test -m ON"
 
-IPAddress local_IP(10,168,125,65);
-IPAddress gateway(10,168,125,63);
+IPAddress local_IP(192,168,0,101);
+IPAddress gateway(192,168,0,1);
 IPAddress subnet(255, 255, 255, 0);
-IPAddress primaryDNS(1,1,1,1);
+IPAddress primaryDNS(8, 8, 8, 8);
+IPAddress secondaryDNS(1, 1, 1, 1);
 
-const char* ssid = "SSID__";
-const char* pass = "PASS__";
+const char* ssid = "Wollwage";
+const char* pass = "ikanhias";
 
 const uint16_t SCREEN_WIDTH = 128;
 const uint16_t SCREEN_HEIGHT = 64;
@@ -41,7 +42,7 @@ void setupWifi() {
 
   WiFi.begin(ssid, pass);
   
-  if(!WiFi.config(local_IP, gateway, subnet)) {
+  if(!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
     Serial.println("static ip failed");
   }
 
@@ -49,13 +50,13 @@ void setupWifi() {
     Serial.print(".");
     delay(500);
   }
-  Serial.println("your local ip : ");
+  Serial.print("your local ip : ");
   Serial.println(WiFi.localIP());
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
   String msg = "";
-  
+
   for(unsigned int i = 0; i < length; i++) {
     msg += (char)payload[i];
   }
@@ -103,6 +104,13 @@ void setup() {
     return;
   }
 
+  if (!mpu.begin()) {
+      Serial.println("MPU6050 not found");
+      while (true);
+  }
+
+  Serial.println("MPU6050 Ready");
+
   setupWifi();
 
   webSocket.begin();
@@ -115,13 +123,6 @@ void setup() {
   pinMode(led2, OUTPUT);
   pinMode(buzzer, OUTPUT);
   digitalWrite(led1, LOW);
-
-  if (!mpu.begin()) {
-      Serial.println("MPU6050 not found");
-      while (true);
-  }
-
-  Serial.println("MPU6050 Ready");
   
   server.on("/", []() {
     File file = LittleFS.open("/index.html", "r");
