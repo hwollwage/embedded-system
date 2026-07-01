@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ESP32 OLED Draw</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        canvas {
+            border: 2px solid black;
+
+            /* Make it larger on screen */
+            width: 512px;
+            height: 256px;
+
+            image-rendering: pixelated;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>OLED Drawing Board</h1>
+
+<!-- OLED is 128x64 -->
+<canvas id="canvas" width="128" height="64"></canvas>
+
+<br>
+
+<button onclick="clearDisplay()">Clear</button>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let drawing = false;
+let lastX = 0;
+let lastY = 0;
+
+// White background
+ctx.fillStyle = "white";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// Black pen
+ctx.strokeStyle = "black";
+ctx.lineWidth = 1;
+
+canvas.addEventListener("mousedown", (e) => {
+    drawing = true;
+
+    const pos = getMousePos(e);
+
+    lastX = pos.x;
+    lastY = pos.y;
+});
+
+canvas.addEventListener("mouseup", () => {
+    drawing = false;
+});
+
+canvas.addEventListener("mouseleave", () => {
+    drawing = false;
+});
+
+canvas.addEventListener("mousemove", (e) => {
+
+    if (!drawing) return;
+
+    const pos = getMousePos(e);
+
+    const x = pos.x;
+    const y = pos.y;
+
+    // Draw locally
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+
+    // Send to ESP32
+    fetch(`/line?x1=${lastX}&y1=${lastY}&x2=${x}&y2=${y}`);
+
+    lastX = x;
+    lastY = y;
+});
+
+function getMousePos(e) {
+
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+        x: Math.floor(
+            (e.clientX - rect.left) *
+            canvas.width /
+            rect.width
+        ),
+
+        y: Math.floor(
+            (e.clientY - rect.top) *
+            canvas.height /
+            rect.height
+        )
+    };
+}
+
+function clearDisplay() {
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    fetch("/clear");
+}
+
+</script>
+
+</body>
+</html>
