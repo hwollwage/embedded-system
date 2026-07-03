@@ -12,6 +12,18 @@ constexpr uint8_t buzzerPin = 25;
 Adafruit_SSD1306 oled(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1); 
 Servo myservo; 
 
+void showMessageOled(String title, String message) {
+  oled.clearDisplay();
+  oled.setTextSize(1);
+  oled.setTextColor(WHITE);
+  oled.setCursor(0, 0);
+  oled.println(title);
+  oled.drawLine(0,10,127,10, SSD1306_WHITE);
+  oled.setCursor(0,20);
+  oled.println(message);
+  oled.display();
+}
+
 void setup() { 
   Serial.begin(115200); 
   delay(2000); 
@@ -38,27 +50,31 @@ void setup() {
 void loop() { 
   if(Serial.available()) { 
     String data = Serial.readStringUntil('\n'); 
-    data.trim(); 
-    int angle = data.toInt(); 
-    angle = constrain(angle, 0 , 180); 
+    data.trim();
     
-    myservo.write(angle); 
-    Serial.printf("servo at angle : %d\n", angle);
-    
-    if(angle >= 100) {
-      Serial.printf("angle is more than 100\n");
-      digitalWrite(buzzerPin, HIGH);
+    if(data.startsWith("ANGLE:")) {
+      int angle = data.substring(6).toInt(); 
+      angle = constrain(angle, 0 , 180); 
+      
+      myservo.write(angle); 
+      showMessageOled("SERVO", "Angle: "+String(angle));
+      Serial.printf("servo at angle : %d\n", angle);
+      
+      if(angle >= 100) {
+        digitalWrite(buzzerPin, HIGH);
+      }else {
+        digitalWrite(buzzerPin, LOW);
+      }
+
+    }else if(data.startsWith("LEFT")) {
+      showMessageOled("MOUSE", "LEFT CLICK");
+      Serial.printf("left mouse clicked\n");
+    }else if(data.startsWith("RIGHT")) {
+      showMessageOled("MOUSE", "RIGHT CLICK");
+      Serial.printf("right mouse clicked\n");
     }else {
-      digitalWrite(buzzerPin, LOW);
+      showMessageOled("ERROR", "Unknown command");
+      Serial.printf("unknown command inserted\n");
     }
-    
-    // Clear and update OLED properly
-    oled.clearDisplay(); 
-    oled.setCursor(10, 5); 
-    oled.printf("SERVO ANGLE MONITOR");
-    
-    oled.setCursor(10, 20); // Moved down slightly for separation
-    oled.printf("servo angle : %d", angle); 
-    oled.display(); // You missed this call in loop()
   } 
 }

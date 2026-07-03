@@ -20,11 +20,13 @@ def mouse(event, x, y, flags, param):
 
     if event == cv2.EVENT_LBUTTONDOWN:
         message = "Left button clicked"
-        message_color = (0, 0, 255) 
+        message_color = (0, 0, 255)
+        esp.write(b"LEFT\n") 
 
     elif event == cv2.EVENT_RBUTTONDOWN:
         message = "Right button clicked"
         message_color = (255, 0, 0)
+        esp.write(b"RIGHT\n")
 
 cap = cv2.VideoCapture(0)
 
@@ -45,7 +47,7 @@ while True:
     servo_angle = int(mouse_x / width * 180)
     if servo_angle != lastangle:
         print(f"Sending: {servo_angle}")
-        esp.write(f"{servo_angle}\n".encode())
+        esp.write(f"ANGLE: {servo_angle}\n".encode())
         lastangle = servo_angle
         time.sleep(0.01)
 
