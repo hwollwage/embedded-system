@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f2f2f2;
+    text-align:center;
+}
+
+button{
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    font-size:35px;
+    margin:8px;
+    border:none;
+    cursor:pointer;
+    box-shadow:0 3px 8px rgba(0,0,0,.3);
+}
+
+button:active{
+    background:#cccccc;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>ESP32 Servo Controller</h2>
+
+<div>
+
+    <div>
+        <button
+        onmousedown="start('up')"
+        onmouseup="stop()"
+        ontouchstart="start('up')"
+        ontouchend="stop()">▲</button>
+    </div>
+
+    <div>
+        <button
+        onmousedown="start('left')"
+        onmouseup="stop()"
+        ontouchstart="start('left')"
+        ontouchend="stop()">◀</button>
+
+        <button onclick="move('center')">●</button>
+
+        <button
+        onmousedown="start('right')"
+        onmouseup="stop()"
+        ontouchstart="start('right')"
+        ontouchend="stop()">▶</button>
+    </div>
+
+    <div>
+        <button
+        onmousedown="start('down')"
+        onmouseup="stop()"
+        ontouchstart="start('down')"
+        ontouchend="stop()">▼</button>
+    </div>
+
+</div>
+
+<script>
+
+let timer = null;
+
+function move(dir)
+{
+    fetch("/move?dir=" + dir);
+}
+
+function start(dir)
+{
+    move(dir);
+
+    timer = setInterval(function()
+    {
+        move(dir);
+    },50);
+}
+
+function stop()
+{
+    clearInterval(timer);
+}
+
+</script>
+
+</body>
+</html>

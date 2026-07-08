@@ -1,5 +1,8 @@
 import cv2
 import numpy as np
+import serial
+
+esp = serial.Serial("/dev/ttyUSB0", 115200)
 
 cap = cv2.VideoCapture(0)
 
