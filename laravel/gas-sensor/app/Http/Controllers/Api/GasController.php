@@ -9,16 +9,22 @@ use Illuminate\Http\Request;
 class GasController extends Controller
 {
     public function store(Request $request) {
-        $request->validate([
-            'gas' => 'required|integer'
+        $validated = $request->validate([
+            'device_id' => 'required|string|max:50',
+            'gas_value' => 'required|integer',
+            'alarm' => 'required|boolean'
         ]);
 
-        GasReading::create([
-            'gas_value' => $request->gas
+        $reading = GasReading::create([
+            'device_id' => $validated['device_id'],
+            'gas_value' => $validated['gas_value'],
+            'alarm' => $validated['alarm'],
         ]);
 
         return response()->json([
-            'status' => 'success'
+            'status' => 'success',
+            'id' => $reading->id,
+            'message' => 'Reading stored successfully'
         ]);
     }
 }
