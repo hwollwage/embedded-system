@@ -33,19 +33,31 @@
     <table>
         <thead>
             <tr>
-                <th>Device ID</th>
-                <th>Gas Level</th>
-                <th>Alarm Status</th>
-                <th>Time</th>
+                <th>ID</th>
+                <th>Device</th>
+                <th>Gas</th>
+                <th>Alarm</th>
+                <th>RSSI</th>
+                <th>IP Address</th>
+                <th>Free Heap</th>
+                <th>Uptime</th>
+                <th>Created At</th>
+                <th>Created</th>
             </tr>
         </thead>
         <tbody>
             @foreach($readings as $reading)
             <tr class="{{ $reading->alarm ? 'table-danger' : '' }}">
-                <td>{{ $reading->device_id }}</td>
-                <td>{{ $reading->gas_value }} ppm</td>
-                <td>{{ $reading->alarm ? '🚨 TRIGGERED' : '✅ Clear' }}</td>
-                <td>{{ $reading->created_at->diffForHumans() }}</td>
+               <td>{{ $reading->id }}</td>
+               <td>{{ $reading->device_id }}</td>
+               <td>{{ $reading->gas_value }}</td>
+               <td>{{ $reading->alarm ? '🚨 DETECTED' : '✅ SAFE' }}</td>
+               <td>{{ $reading->wifi_rssi }} dBm</td>
+               <td>{{ $reading->ip_address }}</td>
+               <td>{{ number_format($reading->free_heap) }}</td>
+               <td>{{ round($reading->uptime_ms / 1000) }} s</td>
+               <td>{{ $reading->created_at->diffForHumans() }}</td>
+               <td>{{ $reading->created_at->format('H:i:s') }}</td>
             </tr>
             @endforeach
         </tbody>

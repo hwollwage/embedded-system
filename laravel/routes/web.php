@@ -7,4 +7,4 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/', [DashboardController::class, 'index']);
+Route::get('/gas-dashboard', [DashboardController::class, 'index']);

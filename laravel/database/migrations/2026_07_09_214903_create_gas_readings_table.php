@@ -13,7 +13,13 @@ return new class extends Migration
     {
         Schema::create('gas_readings', function (Blueprint $table) {
             $table->id();
-            $table->integer('gas_value');
+            $table->string("device_id");
+            $table->integer("gas_value");
+            $table->boolean("alarm");
+            $table->string("ip_address");
+            $table->integer("wifi_rssi");
+            $table->unsignedBigInteger("uptime_ms");
+            $table->unsignedInteger("free_heap");
             $table->timestamps();
         });
     }
