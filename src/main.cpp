@@ -1,95 +1,50 @@
-#include <Arduino.h>
 #include <WiFi.h>
-#include <HTTPClient.h>
-#include <ArduinoJson.h>
-
-constexpr uint8_t gasAnalogPin = 33;
-constexpr uint8_t gasDigitalPin = 32;
-constexpr uint8_t led = 25;
-constexpr uint8_t buzzer = 26;
-constexpr char DEVICE_ID[] = "ESP32-01";
-
-IPAddress local_IP(192,168,0,177);
-IPAddress gateway(192,168,0,1);
-IPAddress subnet(255,255,255,0);
-
-WiFiClient client;
+#include <WebServer.h>
 
 const char* ssid = "Wollwage";
-const char* pass = "ikanhias";
-const char* apiUrl = "http://192.168.0.108:8000/api/gas";
+const char* password = "ikanhias";
+
+constexpr uint8_t LED_PIN = 2;
+
+WebServer server(80);
+
+void handleRoot() {
+    server.send(200, "text/plain", "ESP32 Running");
+}
+
+void handleOn() {
+    digitalWrite(LED_PIN, HIGH);
+    server.send(200, "text/plain", "LED ON");
+}
+
+void handleOff() {
+    digitalWrite(LED_PIN, LOW);
+    server.send(200, "text/plain", "LED OFF");
+}
 
 void setup() {
+
     Serial.begin(115200);
-    pinMode(gasAnalogPin, INPUT);
-    pinMode(gasDigitalPin, INPUT);
-    pinMode(led, OUTPUT);
-    pinMode(buzzer, OUTPUT);
 
-    if(!WiFi.config(local_IP, gateway, subnet)) {
-        Serial.println("STA Failed to configure");
-    }
+    pinMode(LED_PIN, OUTPUT);
 
-    WiFi.begin(ssid, pass);
-    Serial.println();
-    Serial.printf("connecting to %s\n", ssid);
-    while(WiFi.status() != WL_CONNECTED) {
-        Serial.print(".");
+    WiFi.begin(ssid, password);
+
+    while (WiFi.status() != WL_CONNECTED) {
         delay(500);
+        Serial.print(".");
     }
-    Serial.printf("Your IP : %s\n", WiFi.localIP().toString().c_str());
+
+    Serial.println();
+    Serial.println(WiFi.localIP());
+
+    server.on("/", handleRoot);
+    server.on("/on", handleOn);
+    server.on("/off", handleOff);
+
+    server.begin();
 }
 
 void loop() {
-    JsonDocument jsonDoc;
-
-    int gasValue = analogRead(gasAnalogPin);
-    int gasAlarm = digitalRead(gasDigitalPin); // default 1 (true)
-
-    Serial.print("Analog : ");
-    Serial.print(gasValue);
-
-    Serial.print(" | Digital : ");
-    Serial.print(gasAlarm);
-
-    if(gasAlarm == 0) {
-        digitalWrite(led, HIGH);
-        digitalWrite(buzzer, HIGH);
-        Serial.print(" | GAS DETECTED");
-    }else {
-        digitalWrite(led, LOW);
-        digitalWrite(buzzer, LOW);
-        Serial.print(" | SAFE");
-    }
-
-    if(WiFi.status() == WL_CONNECTED) {
-        HTTPClient http;
-
-        http.begin(client, apiUrl);
-        http.addHeader("Content-Type", "application/json");
-
-        jsonDoc["device_id"] = DEVICE_ID;
-        jsonDoc["gas_value"] = gasValue;
-        jsonDoc["alarm"] = (gasAlarm == 0);
-        jsonDoc["ip_address"] = WiFi.localIP().toString();
-        jsonDoc["wifi_rssi"] = WiFi.RSSI();
-        jsonDoc["uptime_ms"] = millis();
-        jsonDoc["free_heap"] = ESP.getFreeHeap();
-
-        String json;
-        serializeJson(jsonDoc, json);
-        // Serial.println(json);
-
-        int httpCode = http.POST(json);
-        Serial.print(" | HTTP Code : ");
-        Serial.println(httpCode);
-
-        if(httpCode <= 0) {
-            Serial.print(" | Error : ");
-            Serial.print(http.errorToString(httpCode));
-        }
-        
-        http.end();
-    }
-    delay(4000);
+    server.handleClient();
 }
