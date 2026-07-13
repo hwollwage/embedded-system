@@ -45,6 +45,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
             digitalWrite(LED_PIN, LOW);
             digitalWrite(BUZZER_PIN, LOW);
         }
+
+        Serial.printf("Servo -> %d\n", angle);
     }
 
     // led
