@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,144 +9,92 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const LoginPage(),
+      home: HomePage(),
     );
   }
 }
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int selectedIndex = 0;
+
+  final List<Widget> pages = const [
+    Center(
+      child: Text(
+        "🏠 Home",
+        style: TextStyle(fontSize: 30),
+      ),
+    ),
+    Center(
+      child: Text(
+        "👤 Profile",
+        style: TextStyle(fontSize: 30),
+      ),
+    ),
+    Center(
+      child: Text(
+        "⚙️ Settings",
+        style: TextStyle(fontSize: 30),
+      ),
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-
       appBar: AppBar(
         centerTitle: true,
-        title: Text(
-          "Login",
-          style: GoogleFonts.jetBrainsMono(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text("Navigation Rail"),
       ),
 
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+      body: Row(
+        children: [
+          NavigationRail(
+            selectedIndex: selectedIndex,
 
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+            onDestinationSelected: (index) {
+              setState(() {
+                selectedIndex = index;
+              });
+            },
 
-                const Icon(
-                  Icons.lock_outline,
-                  size: 100,
-                  color: Colors.blue,
-                ),
+            labelType: NavigationRailLabelType.all,
 
-                const SizedBox(height: 20),
+            destinations: const [
+              NavigationRailDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: Text("Home"),
+              ),
 
-                Text(
-                  "Welcome Back",
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              NavigationRailDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person),
+                label: Text("Profile"),
+              ),
 
-                const SizedBox(height: 10),
-
-                Text(
-                  "Please login to continue",
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 16,
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: "Username",
-                    prefixIcon: const Icon(Icons.person),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20,),
-
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: "Email",
-                    prefixIcon: const Icon(Icons.mail),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: "Password",
-                    prefixIcon: const Icon(Icons.lock),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-
-                  child: ElevatedButton(
-                    onPressed: () {
-                      print("Login Button Pressed");
-                    },
-
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightBlueAccent,
-                    ),
-
-                    child: Text(
-                      "LOGIN",
-                      style: GoogleFonts.jetBrainsMono(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.white
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                TextButton(
-                  onPressed: () {
-                    print("forgot password button clicked");
-                  },
-
-                  child: Text(
-                    "Forgot Password?",
-                    style: GoogleFonts.jetBrainsMono(),
-                  ),
-                ),
-              ],
-            ),
+              NavigationRailDestination(
+                icon: Icon(Icons.settings_outlined),
+                selectedIcon: Icon(Icons.settings),
+                label: Text("Settings"),
+              ),
+            ],
           ),
-        ),
+
+          const VerticalDivider(width: 1),
+
+          Expanded(
+            child: pages[selectedIndex],
+          ),
+        ],
       ),
     );
   }

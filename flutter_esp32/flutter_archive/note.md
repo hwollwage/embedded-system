@@ -1,0 +1,1 @@
+children can only be used in : column, row, stack, listview, gridview, wrap

@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- START add android permision -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- END add android permision -->
+    
     <application
         android:label="flutter_esp32"
         android:name="${applicationName}"
