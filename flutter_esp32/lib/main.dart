@@ -1,100 +1,136 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+// import 'package:mqtt_client/mqtt_client.dart';
+// import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:io';
+import 'pages/home_page.dart';
+import 'pages/buzzer_page.dart';
+import 'pages/led_page.dart';
+import 'pages/servo_page.dart';
 
-void main() {
-  runApp(const MyApp());
-}
+final FlutterLocalNotificationsPlugin notifications =
+  FlutterLocalNotificationsPlugin();
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: HomePage(),
-    );
+  const AndroidInitializationSettings androidSettings = 
+    AndroidInitializationSettings('@mipmap/ic_launcher');
+  
+  const InitializationSettings settings =
+    InitializationSettings(android: androidSettings);
+  
+  await notifications.initialize(settings);
+
+  if(Platform.isAndroid) {
+    await notifications.resolvePlatformSpecificImplementation
+    <AndroidFlutterLocalNotificationsPlugin>()
+    ?.requestExactAlarmsPermission();
   }
+
+  runApp(const MyWidget());
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class MyWidget extends StatefulWidget {
+  const MyWidget({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<MyWidget> createState() => _MyWidgetState();
 }
 
-class _HomePageState extends State<HomePage> {
-  int selectedIndex = 0;
+class _MyWidgetState extends State<MyWidget> {
 
+  Future<void> showNotification() async {
+    const AndroidNotificationDetails androidDetails = 
+      AndroidNotificationDetails(
+        'Hanzel Channel 1',
+        'Test Notif',
+        channelDescription: 'Hanzel CH1',
+        importance: Importance.high,
+        priority: Priority.high,
+      );
+
+    const NotificationDetails details =
+      NotificationDetails(android: androidDetails);
+
+    await notifications.show(0, "ESP32 FLUTTER", "Something changed", details,);
+  }
+
+  int currentIndex = 1;
+  
   final List<Widget> pages = const [
-    Center(
-      child: Text(
-        "🏠 Home",
-        style: TextStyle(fontSize: 30),
-      ),
-    ),
-    Center(
-      child: Text(
-        "👤 Profile",
-        style: TextStyle(fontSize: 30),
-      ),
-    ),
-    Center(
-      child: Text(
-        "⚙️ Settings",
-        style: TextStyle(fontSize: 30),
-      ),
-    ),
+    LedPage(),
+    HomePage(),
+    ServoPage(),
+    BuzzerPage(),
+  ];
+
+  final List<String> titles = [
+    "LED",
+    'Home',
+    'SERVO',
+    'BUZZER',
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text("Navigation Rail"),
-      ),
-
-      body: Row(
-        children: [
-          NavigationRail(
-            selectedIndex: selectedIndex,
-
-            onDestinationSelected: (index) {
-              setState(() {
-                selectedIndex = index;
-              });
-            },
-
-            labelType: NavigationRailLabelType.all,
-
-            destinations: const [
-              NavigationRailDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: Text("Home"),
-              ),
-
-              NavigationRailDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person),
-                label: Text("Profile"),
-              ),
-
-              NavigationRailDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings),
-                label: Text("Settings"),
-              ),
-            ],
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          backgroundColor: Colors.cyanAccent,
+          title: Text(
+            "ESP32 Pages",
+            style: GoogleFonts.jetBrainsMono(
+              color: Colors.black,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+        ),
 
-          const VerticalDivider(width: 1),
+        body: pages[currentIndex],
 
-          Expanded(
-            child: pages[selectedIndex],
-          ),
-        ],
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: currentIndex,
+          onTap: (index) {
+            setState(() {
+              currentIndex = index;
+            });
+          },
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.lightbulb),
+              label: "LED",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: "HOME",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.precision_manufacturing),
+              label: "SERVO",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.spatial_audio_off),
+              label: "BUZZER",
+            ),
+          ],
+          backgroundColor: Colors.white,
+          selectedFontSize: 17,
+          unselectedFontSize: 13,
+          selectedItemColor: Colors.black,
+          unselectedItemColor: Colors.grey,
+          type: BottomNavigationBarType.fixed,
+
+        ),
+
+        floatingActionButton: FloatingActionButton(
+          onPressed: showNotification,
+          child: const Icon(Icons.notifications),
+        ),
       ),
     );
   }

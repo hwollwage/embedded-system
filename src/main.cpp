@@ -17,28 +17,30 @@ Servo servo;
 
 void setupWifi() {
     WiFi.begin(ssid, pass);
-    Serial.printf("connecting to : %s\n", ssid);
+    Serial.printf("Connecting to %s\n",ssid);
     while(WiFi.status() != WL_CONNECTED) {
         Serial.print(".");
         delay(500);
     }
-    Serial.printf("Your Local IP : %s\n", WiFi.localIP().toString().c_str());
+    if(WiFi.status() == WL_CONNECTED) {
+        Serial.println("Successfully connected to wifi");
+    }
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
     String msg;
     for(int i = 0; i < length; i++) {
-        msg += (char)payload[i];
+        msg += (char)payload[i]; 
     }
-    
-    Serial.printf("topic : %s  |  msg : %s\n",topic, msg.c_str());
+    Serial.printf("topic : %s | msg : %s\n", topic, msg.c_str());
+
 
     // servo
     if(String(topic) == "esp32/servo/angle") {
         int angle = msg.toInt();
         angle = constrain(angle, 0, 180);
         servo.write(angle);
-        if(angle >= 150) {
+        if(angle >= 170) {
             digitalWrite(LED_PIN, HIGH);
             digitalWrite(BUZZER_PIN, HIGH);
         }else {
@@ -56,7 +58,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
         }
     }
 
-    //buzzer
+    // buzzer
     if(String(topic) == "esp32/buzzer/state") {
         if(msg == "ON") {
             digitalWrite(BUZZER_PIN, HIGH);
@@ -64,28 +66,26 @@ void callback(char* topic, byte* payload, unsigned int length) {
             digitalWrite(BUZZER_PIN, LOW);
         }
     }
-    
 }
 
 void reconnect() {
     while(!client.connected()) {
-        Serial.print("connecting MQTT");
-        
+        Serial.println("connecting to MQTT");
         String clientId = "ESP32-";
         clientId += String((uint32_t)ESP.getEfuseMac(), HEX);
 
         if(client.connect(clientId.c_str())) {
-            Serial.println("connected");
+            Serial.println("CONNECTED!");
+            Serial.print("Your Client ID : ");
+            Serial.println(clientId);
 
             client.subscribe("esp32/servo/angle");
             client.subscribe("esp32/led/state");
             client.subscribe("esp32/buzzer/state");
-
-            Serial.println("subscribed");
         }else {
             Serial.print("failed, rc=");
             Serial.println(client.state());
-            delay(5000);
+            delay(4000);
         }
     }
 }
@@ -103,8 +103,6 @@ void setup() {
 }
 
 void loop() {
-    if(!client.connected()) {
-        reconnect();
-    }
+    if(!client.connected()) reconnect();
     client.loop();
 }
