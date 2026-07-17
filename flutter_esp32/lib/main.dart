@@ -8,6 +8,7 @@ import 'pages/home_page.dart';
 import 'pages/buzzer_page.dart';
 import 'pages/led_page.dart';
 import 'pages/servo_page.dart';
+import 'pages/gas_page.dart';
 
 final FlutterLocalNotificationsPlugin notifications =
   FlutterLocalNotificationsPlugin();
@@ -29,17 +30,17 @@ Future<void> main() async {
     ?.requestExactAlarmsPermission();
   }
 
-  runApp(const MyWidget());
+  runApp(const MyApp());
 }
 
-class MyWidget extends StatefulWidget {
-  const MyWidget({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
 
   @override
-  State<MyWidget> createState() => _MyWidgetState();
+  State<MyApp> createState() => _MyAppState();
 }
 
-class _MyWidgetState extends State<MyWidget> {
+class _MyAppState extends State<MyApp> {
 
   Future<void> showNotification() async {
     const AndroidNotificationDetails androidDetails = 
@@ -61,16 +62,18 @@ class _MyWidgetState extends State<MyWidget> {
   
   final List<Widget> pages = const [
     LedPage(),
-    HomePage(),
     ServoPage(),
+    HomePage(),
     BuzzerPage(),
+    GasPage(),
   ];
 
   final List<String> titles = [
     "LED",
-    'Home',
     'SERVO',
+    'HOME',
     'BUZZER',
+    'GAS',
   ];
 
   @override
@@ -106,16 +109,20 @@ class _MyWidgetState extends State<MyWidget> {
               label: "LED",
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: "HOME",
-            ),
-            BottomNavigationBarItem(
               icon: Icon(Icons.precision_manufacturing),
               label: "SERVO",
             ),
             BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: "HOME",
+            ),
+            BottomNavigationBarItem(
               icon: Icon(Icons.spatial_audio_off),
               label: "BUZZER",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.thermostat),
+              label: "GAS",
             ),
           ],
           backgroundColor: Colors.white,
