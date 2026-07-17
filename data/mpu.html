@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPU6050 MONITOR WEBSOCKET</title>
+</head>
+<body>
+    <h2>MPU6050 Monitor</h2>
+    <h3 id="Ax"></h3><br>
+    <h3 id="Ay"></h3><br>
+    <h3 id="Az"></h3><br>
+    <h3 id="Gx"></h3><br>
+    <h3 id="Gy"></h3><br>
+    <h3 id="Gz"></h3><br>
+    <h3 id="temp"></h3><br>
+
+    <script>
+        const ws = new WebSocket("ws://" + location.hostname + ":81");
+    
+        ws.onopen = function () {
+            console.log("Connected");
+        };
+    
+        ws.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+    
+            document.getElementById("Ax").textContent = "Accel X : " + data.Ax;
+            document.getElementById("Ay").textContent = "Accel Y : " + data.Ay;
+            document.getElementById("Az").textContent = "Accel Z : " + data.Az;
+    
+            document.getElementById("Gx").textContent = "Gyro X : " + data.Gx;
+            document.getElementById("Gy").textContent = "Gyro Y : " + data.Gy;
+            document.getElementById("Gz").textContent = "Gyro Z : " + data.Gz;
+    
+            document.getElementById("temp").textContent = "Temp : " + data.temp;
+        };
+    
+        ws.onclose = function () {
+            console.log("Disconnected");
+        };
+    
+        ws.onerror = function (e) {
+            console.log(e);
+        };
+    </script>
+</body>
+</html>

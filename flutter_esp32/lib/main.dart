@@ -9,6 +9,7 @@ import 'pages/buzzer_page.dart';
 import 'pages/led_page.dart';
 import 'pages/servo_page.dart';
 import 'pages/gas_page.dart';
+import 'pages/mpu_page.dart';
 
 final FlutterLocalNotificationsPlugin notifications =
   FlutterLocalNotificationsPlugin();
@@ -64,6 +65,7 @@ class _MyAppState extends State<MyApp> {
     LedPage(),
     ServoPage(),
     HomePage(),
+    MpuPage(),
     BuzzerPage(),
     GasPage(),
   ];
@@ -72,6 +74,7 @@ class _MyAppState extends State<MyApp> {
     "LED",
     'SERVO',
     'HOME',
+    'MPU'
     'BUZZER',
     'GAS',
   ];
@@ -115,6 +118,10 @@ class _MyAppState extends State<MyApp> {
             BottomNavigationBarItem(
               icon: Icon(Icons.home),
               label: "HOME",
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.screen_rotation),
+              label: "MPU",
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.spatial_audio_off),
