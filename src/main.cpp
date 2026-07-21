@@ -1,81 +1,83 @@
 #include <Arduino.h>
-#include <Adafruit_MPU6050.h>
-#include <Adafruit_Sensor.h>
-#include <WebServer.h>
+#include <ESP32Servo.h>
 #include <WiFi.h>
-#include <WebSocketsServer.h>
-#include <LittleFS.h>
+#include <PubSubClient.h>
 #include <ArduinoJson.h>
 
-Adafruit_MPU6050 mpu;
-WebServer server(80);
-WebSocketsServer webSocket(81);
+Servo servo;
+WiFiClient esp32;
+PubSubClient client(esp32);
+JsonDocument jsonDoc;
+
 
 const char* ssid = "Wollwage";
 const char* pass = "ikanhias";
+const char* mqtt_server = "broker.hivemq.com";
+
+// IPAddress local_IP(192,168,0,109);
+// IPAddress gateway(192,168,0,1);
+// IPAddress subnet(255,255,255,0);
+// IPAddress primaryDNS(8,8,8,8);
+// IPAddress secondaryDNS(1,1,1,1);
+
+constexpr uint8_t SERVO_PIN = 25;
+
+void callback(char* topic, byte* payload, unsigned int length) {
+    String msg;
+    for(int i = 0; i < length; i++) {
+        msg += (char)payload[i];
+    }
+    Serial.printf("Topic : %s | Message : %s\n", topic, msg.c_str());
+
+    if(String(topic) == "servo/angle") {
+        int angle = msg.toInt();
+        angle = constrain(angle,0,180);
+        servo.write(angle);
+    }
+}
+
+void reconnect() {
+    if(!client.connected()) {
+        Serial.println("Connecting to MQTT...");
+
+        String clientId = "ESP32-";
+        clientId += String((uint32_t)ESP.getEfuseMac(), HEX);
+
+        if(client.connect(clientId.c_str())) {
+            Serial.println("CONNECTED TO MQTT");
+            
+            client.subscribe("servo/angle");
+            Serial.println("SUBSCRIBED");
+        }else {
+            Serial.print("Failed, rc=");
+            Serial.println(client.state());
+            delay(4000);
+        }
+    }
+}
 
 void setup() {
     Serial.begin(115200);
-    if(!mpu.begin()) {
-        Serial.println("mpu not found");
-        for(;;);
-    }
-    Serial.println("mpu ready");
-    if(!LittleFS.begin(true)) {
-        Serial.println("littlefs mount failed");
-        return;
-    }
+    // if(!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
+    //     Serial.println("STA Failed");
+    // }
     WiFi.begin(ssid, pass);
-    Serial.print("connecting to : ");
-    Serial.println(ssid);
+    Serial.printf("Connecting to %s\n", ssid);
     while(WiFi.status() != WL_CONNECTED) {
-        Serial.println(".");
+        Serial.print(".");
         delay(500);
     }
-    Serial.println("CONNECTED!");
-    Serial.printf("Your ip : %s\n", WiFi.localIP().toString().c_str());
+    Serial.println("CONNECTED");
+    Serial.printf("Your IP : %s\n", WiFi.localIP().toString().c_str());
+    
+    servo.attach(SERVO_PIN);
+    servo.write(0);
 
-    webSocket.begin();
-
-    server.on("/", []() {
-        File file = LittleFS.open("/mpu.html", "r");
-        server.streamFile(file, "text/html");
-        file.close();
-    });
-
-    server.begin();
+    client.setServer(mqtt_server, 1883);
+    client.setCallback(callback);
 }
 
 void loop() {
-    JsonDocument jsonDoc;
-    sensors_event_t accel, gyro, temp;
-    mpu.getEvent(&accel, &gyro, &temp);
-    Serial.println();
-    Serial.printf(
-        "Accel X: %.2f | Y: %.2f | Z: %.2f | Gyro X: %.2f | Y: %.2f | Z: %.2f | Temp: %.2f C\n",
-        accel.acceleration.x,
-        accel.acceleration.y,
-        accel.acceleration.z,
-        gyro.gyro.x,
-        gyro.gyro.y,
-        gyro.gyro.z,
-        temp.temperature
-    );
-
-    jsonDoc["Ax"] = accel.acceleration.x;
-    jsonDoc["Ay"] = accel.acceleration.y;
-    jsonDoc["Az"] = accel.acceleration.z;
-    jsonDoc["Gx"] = gyro.gyro.x;
-    jsonDoc["Gy"] = gyro.gyro.y;
-    jsonDoc["Gz"] = gyro.gyro.z;
-    jsonDoc["temp"] = temp.temperature;
-
-    String json;
-
-    server.handleClient();
-    webSocket.loop();
-    serializeJson(jsonDoc, json);
-    webSocket.broadcastTXT(json);
-    
-    delay(50);
+    if(!client.connected()) reconnect();
+    client.loop();
 }

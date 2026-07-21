@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h2>mpu6050 monitor</h2>
+    <h3 id="ax"></h3><br>
+    <h3 id="ay"></h3><br>
+    <h3 id="az"></h3><br>
+    <h3 id="gx"></h3><br>
+    <h3 id="gy"></h3><br>
+    <h3 id="gz"></h3><br>
+    <h3 id="temp"></h3><br>
+    <h3 id="roll"></h3><br>
+    <h3 id="pitch"></h3><br>
+
+    <script>
+        const ws = new WebSocket("ws://192.168.0.109:81");
+        ws.onopen = function() {
+            console.log("WEBSOCKET CONNECTED");
+        }
+        ws.onclose = function() {
+            console.log("WEBSOCKET DISCONNECTED");
+        }
+        ws.onerror = function(e) {
+            console.log("WEBSOCKET "+e);
+        }
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            document.getElementById("ax").textContent = "Accel X : "+data.ax.toFixed(2);
+            document.getElementById("ay").textContent = "Accel Y : "+data.ay.toFixed(2);
+            document.getElementById("az").textContent = "Accel Z : "+data.az.toFixed(2);
+            
+            document.getElementById("gx").textContent = "Gyro X : "+data.gx.toFixed(2);
+            document.getElementById("gy").textContent = "Gyro Y : "+data.gy.toFixed(2);
+            document.getElementById("gz").textContent = "Gyro Z : "+data.gz.toFixed(2);
+
+            document.getElementById("temp").textContent = "Temperature : "+data.temp.toFixed(2);
+
+            document.getElementById("roll").textContent = "Roll : " + data.roll.toFixed(2);
+            document.getElementById("pitch").textContent = "Pitch : " + data.pitch.toFixed(2);
+        }
+    </script>
+</body>
+</html>

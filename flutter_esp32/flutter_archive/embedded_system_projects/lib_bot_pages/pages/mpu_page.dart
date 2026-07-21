@@ -3,7 +3,13 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
 
 class MpuPage extends StatefulWidget {
-  const MpuPage({super.key});
+  // Step 1: Add the function variable to the constructor
+  final Function({String? title, String? body}) onTriggerNotification;
+
+  const MpuPage({
+    super.key, 
+    required this.onTriggerNotification,
+  });
 
   @override
   State<MpuPage> createState() => _MpuPageState();
@@ -14,33 +20,34 @@ class _MpuPageState extends State<MpuPage> {
   double gx = 0, gy = 0, gz = 0;
   double temp = 0;
   late final WebSocketChannel ch;
-
   String msg = "Waitingx...";
 
   @override
   void initState() {
     super.initState();
-
-    ch = WebSocketChannel.connect(Uri.parse("ws://192.168.0.107:81"));
-
+    ch = WebSocketChannel.connect(Uri.parse("ws://192.168.0.105:81"));
     ch.stream.listen(
       (msg) {
         print("Received: $msg");
-
         try {
           final data = jsonDecode(msg);
-
           setState(() {
-            ax = data["Ax"];
-            ay = data["Ay"];
-            az = data["Az"];
-
-            gx = data["Gx"];
-            gy = data["Gy"];
-            gz = data["Gz"];
-
-            temp = data["temp"];
+            ax = (data["Ax"] as num).toDouble();
+            ay = (data["Ay"] as num).toDouble();
+            az = (data["Az"] as num).toDouble();
+            gx = (data["Gx"] as num).toDouble();
+            gy = (data["Gy"] as num).toDouble();
+            gz = (data["Gz"] as num).toDouble();
+            temp = (data["temp"] as num).toDouble();
           });
+
+          // Step 2: Trigger the callback passed from main.dart
+          if (ax >= 7) {
+            widget.onTriggerNotification(
+              title: "MPU Alert!",
+              body: "Accel X crossed threshold: ${ax.toStringAsFixed(2)}",
+            );
+          }
         } catch (e) {
           print("JSON Error: $e");
         }
@@ -71,19 +78,13 @@ class _MpuPageState extends State<MpuPage> {
             Text("Accel X : ${ax.toStringAsFixed(2)}"),
             Text("Accel Y : ${ay.toStringAsFixed(2)}"),
             Text("Accel Z : ${az.toStringAsFixed(2)}"),
-
-            SizedBox(height: 20),
-
+            const SizedBox(height: 20),
             Text("Gyro X : ${gx.toStringAsFixed(2)}"),
             Text("Gyro Y : ${gy.toStringAsFixed(2)}"),
             Text("Gyro Z : ${gz.toStringAsFixed(2)}"),
-
-            SizedBox(height: 20),
-
-            Text("TEMP : ${temp.toStringAsFixed(2)}°"),
-
             const SizedBox(height: 20),
-
+            Text("TEMP : ${temp.toStringAsFixed(2)}°"),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 ch.sink.add("Hello ESP32");

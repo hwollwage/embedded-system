@@ -1,0 +1,5 @@
+http: ^1.2.2
+  google_fonts: ^6.2.1
+  mqtt_client: ^10.11.11
+  flutter_local_notifications: "^19.4.2"
+  web_socket_channel: "^3.0.3"

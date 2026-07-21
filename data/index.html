@@ -1,116 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Voice Assistant</title>
 
-<style>
-body {
-    margin: 0;
-    overflow: hidden;
-    background: white;
-}
+    <style>
+        body{
+            font-family: Arial, sans-serif;
+            display:flex;
+            flex-direction:column;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            background:#f5f5f5;
+        }
 
-#info {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: rgba(255,255,255,.9);
-    padding: 10px;
-    font-family: monospace;
-}
-</style>
+        button{
+            width:100px;
+            height:100px;
+            border:none;
+            border-radius:50%;
+            font-size:40px;
+            cursor:pointer;
+        }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        #status{
+            margin-top:20px;
+            font-size:20px;
+        }
 
+        #result{
+            margin-top:10px;
+            font-size:24px;
+            font-weight:bold;
+            color:blue;
+        }
+    </style>
 </head>
-
 <body>
 
-<div id="info">Waiting...</div>
+<h1>ESP32 Voice Assistant</h1>
+<button id="mic">🎤</button>
 
-<script>
+<div id="status">Press the microphone</div>
 
-const scene = new THREE.Scene();
+<div id="result"></div>
 
-const camera =
-    new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth/window.innerHeight,
-        0.1,
-        1000
-    );
-
-const renderer =
-    new THREE.WebGLRenderer({
-        antialias:true
-    });
-
-renderer.setSize(
-    window.innerWidth,
-    window.innerHeight
-);
-
-document.body.appendChild(
-    renderer.domElement
-);
-
-const texture =
-    new THREE.TextureLoader()
-    .load("ijazah-jokowi.jpg");
-
-const plate =
-    new THREE.Mesh(
-        new THREE.PlaneGeometry(4,2),
-        new THREE.MeshBasicMaterial({
-            map:texture
-        })
-    );
-
-scene.add(plate);
-
-camera.position.z = 4;
-
-const ws =
-    new WebSocket(
-        "ws://10.168.125.65:81"
-    );
-
-ws.onmessage = (event) => {
-
-    const d = JSON.parse(event.data);
-
-    plate.rotation.x =
-        d.pitch * Math.PI / 180;
-
-    plate.rotation.z =
-        d.roll * Math.PI / 180;
-
-    document.getElementById("info").innerHTML =
-`
-<b>MPU6050 ATTITUDE</b><br><br>
-
-Roll : ${d.roll.toFixed(2)}°<br>
-Pitch: ${d.pitch.toFixed(2)}°<br><br>
-
-X: ${d.x.toFixed(2)}<br>
-Y: ${d.y.toFixed(2)}<br>
-Z: ${d.z.toFixed(2)}
-`;
-};
-
-function animate() {
-
-    requestAnimationFrame(animate);
-
-    renderer.render(
-        scene,
-        camera
-    );
-}
-
-animate();
-
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    background: white;
+}
+
+#info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255,255,255,.9);
+    padding: 10px;
+    font-family: monospace;
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+</head>
+
+<body>
+
+<div id="info">Waiting...</div>
+
+<script>
+
+const scene = new THREE.Scene();
+
+const camera =
+    new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth/window.innerHeight,
+        0.1,
+        1000
+    );
+
+const renderer =
+    new THREE.WebGLRenderer({
+        antialias:true
+    });
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+const texture =
+    new THREE.TextureLoader()
+    .load("ijazah-jokowi.jpg");
+
+const plate =
+    new THREE.Mesh(
+        new THREE.PlaneGeometry(4,2),
+        new THREE.MeshBasicMaterial({
+            map:texture
+        })
+    );
+
+scene.add(plate);
+
+camera.position.z = 4;
+
+const ws =
+    new WebSocket(
+        "ws://10.168.125.65:81"
+    );
+
+ws.onmessage = (event) => {
+
+    const d = JSON.parse(event.data);
+
+    plate.rotation.x =
+        d.pitch * Math.PI / 180;
+
+    plate.rotation.z =
+        d.roll * Math.PI / 180;
+
+    document.getElementById("info").innerHTML =
+`
+<b>MPU6050 ATTITUDE</b><br><br>
+
+Roll : ${d.roll.toFixed(2)}°<br>
+Pitch: ${d.pitch.toFixed(2)}°<br><br>
+
+X: ${d.x.toFixed(2)}<br>
+Y: ${d.y.toFixed(2)}<br>
+Z: ${d.z.toFixed(2)}
+`;
+};
+
+function animate() {
+
+    requestAnimationFrame(animate);
+
+    renderer.render(
+        scene,
+        camera
+    );
+}
+
+animate();
+
+</script>
+
+</body>
+</html>
