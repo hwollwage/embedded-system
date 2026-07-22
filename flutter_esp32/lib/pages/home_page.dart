@@ -174,7 +174,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                isListening ? Icons.mic : Icons.mic_none,
+                isListening ? Icons.mic : Icons.mic,
                 size: 120,
                 color: isListening ? Colors.red : Colors.black,
               ),
