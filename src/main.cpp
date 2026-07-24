@@ -1,56 +1,110 @@
-#include <Adafruit_MPU6050.h>
-#include <Adafruit_Sensor.h>
-// #include <Wire.h>
 #include <Arduino.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
 #include <ESP32Servo.h>
 
-Adafruit_MPU6050 mpu;
+const char* ssid = "Wollwage";
+const char* pass = "ikanhias";
+const char* mqtt_server = "broker.hivemq.com";
+
+constexpr uint8_t SERVO_PIN = 25;
+constexpr uint8_t LED_PIN = 13;
+constexpr uint8_t BUZZER_PIN = 14;
+
+WiFiClient espClient;
+PubSubClient client(espClient);
 Servo servo;
 
-const int SERVO_PIN = 25; 
+void setupWifi() {
+    WiFi.begin(ssid, pass);
+    Serial.printf("connecting to : %s\n", ssid);
+    while(WiFi.status() != WL_CONNECTED) {
+        Serial.print(".");
+        delay(500);
+    }
+    Serial.printf("Your Local IP : %s\n", WiFi.localIP().toString().c_str());
+}
 
-float pitch = 0;
-float servoAngle = 90;
+void callback(char* topic, byte* payload, unsigned int length) {
+    String msg;
+    for(int i = 0; i < length; i++) {
+        msg += (char)payload[i];
+    }
+    
+    Serial.printf("topic : %s  |  msg : %s\n",topic, msg.c_str());
 
-float mapTheFloat(float x, float in_min, float in_max, float out_min, float out_max) {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-  // servoAngle = mapTheFloat(pitch, -45, 45, 0 ,180); 
+    // servo
+    if(String(topic) == "esp32/servo/angle") {
+        int angle = msg.toInt();
+        angle = constrain(angle, 0, 180);
+        servo.write(angle);
+        if(angle >= 150) {
+            digitalWrite(LED_PIN, HIGH);
+            digitalWrite(BUZZER_PIN, HIGH);
+        }else {
+            digitalWrite(LED_PIN, LOW);
+            digitalWrite(BUZZER_PIN, LOW);
+        }
+    }
+
+    // led
+    if(String(topic) == "esp32/led/state") {
+        if(msg == "ON") {
+            digitalWrite(LED_PIN, HIGH);
+        }else if(msg == "OFF") {
+            digitalWrite(LED_PIN, LOW);
+        }
+    }
+
+    //buzzer
+    if(String(topic) == "esp32/buzzer/state") {
+        if(msg == "ON") {
+            digitalWrite(BUZZER_PIN, HIGH);
+        }else if(msg == "OFF") {
+            digitalWrite(BUZZER_PIN, LOW);
+        }
+    }
+    
+}
+
+void reconnect() {
+    while(!client.connected()) {
+        Serial.print("connecting MQTT");
+        
+        String clientId = "ESP32-";
+        clientId += String((uint32_t)ESP.getEfuseMac(), HEX);
+
+        if(client.connect(clientId.c_str())) {
+            Serial.println("connected");
+
+            client.subscribe("esp32/servo/angle");
+            client.subscribe("esp32/led/state");
+            client.subscribe("esp32/buzzer/state");
+
+            Serial.println("subscribed");
+        }else {
+            Serial.print("failed, rc=");
+            Serial.println(client.state());
+            delay(5000);
+        }
+    }
 }
 
 void setup() {
-  Serial.begin(115200);
-  delay(3000);
-  // Wire.begin();
-  if(!mpu.begin()) {
-    Serial.println("mpu not found");
-    for(;;);
-  }
-  Serial.println("MPU READY");
+    Serial.begin(115200);
+    pinMode(LED_PIN, OUTPUT);
+    pinMode(BUZZER_PIN, OUTPUT);
+    servo.attach(SERVO_PIN);
+    servo.write(0);
+    setupWifi();
 
-  // up -> larger measure, down -> more precise
-  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
-  // up -> faster rotation measu. down -> more precise
-  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
-  // up -> more responsive (more noise), down -> slower (smoother)
-  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
-
-  servo.setPeriodHertz(50);
-  servo.attach(SERVO_PIN, 500, 2400);
-  servo.write(90);
-  delay(1000);
+    client.setServer(mqtt_server, 1883);
+    client.setCallback(callback);
 }
 
 void loop() {
-  sensors_event_t accel, gyro, temp;
-  mpu.getEvent(&accel, &gyro, &temp);
-
-  pitch = atan2(accel.acceleration.x, sqrt(accel.acceleration.y * accel.acceleration.y + accel.acceleration.z * accel.acceleration.z)) * 180.0 / PI;
-  
-  servoAngle = mapTheFloat(pitch, -45, 45, 0 ,180); 
-  servoAngle = constrain(servoAngle, 0, 180);
-  
-  servo.write((int)servoAngle);
-
-  Serial.printf("Pitch: %.2f deg | Servo : %.2f deg\n", pitch, servoAngle);
-  delay(10);
+    if(!client.connected()) {
+        reconnect();
+    }
+    client.loop();
 }
