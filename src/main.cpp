@@ -1,110 +1,92 @@
 #include <Arduino.h>
+#include <HTTPClient.h>
 #include <WiFi.h>
-#include <PubSubClient.h>
-#include <ESP32Servo.h>
+#include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
+#include <WebServer.h>
+#include <LittleFS.h>
+
+HTTPClient http;
+WebServer server(80);
 
 const char* ssid = "Wollwage";
 const char* pass = "ikanhias";
-const char* mqtt_server = "broker.hivemq.com";
+const char* api_key = "";
 
-constexpr uint8_t SERVO_PIN = 25;
-constexpr uint8_t LED_PIN = 13;
-constexpr uint8_t BUZZER_PIN = 14;
+String jsonData, jsonSupport;
 
-WiFiClient espClient;
-PubSubClient client(espClient);
-Servo servo;
+void getHttp() {
+    JsonDocument doc;
+    WiFiClientSecure client;
+    client.setInsecure();
 
-void setupWifi() {
+    String url = "https://reqres.in/api/users/1";
+    http.begin(url);
+
+    http.addHeader("x-api-key", api_key);
+    int httpCode = http.GET();
+    Serial.print("http code : ");
+    Serial.println(httpCode);
+
+    String response = http.getString();
+
+    DeserializationError error = deserializeJson(doc, response);
+    if(error) {
+        Serial.print("json parse failed : ");
+        Serial.println(error.c_str());
+        http.end();
+        return;
+    }
+    
+    JsonObject dataObj = doc["data"];
+    Serial.println("=== DATA ===");
+    serializeJson(doc["data"], jsonData);
+    Serial.println(jsonData);
+    Serial.println();
+
+    JsonObject supportObj = doc["support"];
+    Serial.println("=== SUPPORT ===");
+    serializeJson(doc["support"], jsonSupport);
+    Serial.println(jsonSupport);
+    Serial.println();
+}
+
+void setup() {
+    delay(2000);
+    Serial.begin(115200);
+    delay(2000);
+    if(!LittleFS.begin()) {
+        Serial.println("littlefs mount failed");
+        return;
+    }
     WiFi.begin(ssid, pass);
-    Serial.printf("connecting to : %s\n", ssid);
     while(WiFi.status() != WL_CONNECTED) {
         Serial.print(".");
         delay(500);
     }
-    Serial.printf("Your Local IP : %s\n", WiFi.localIP().toString().c_str());
-}
+    Serial.printf("Your ip : %s\n", WiFi.localIP().toString().c_str());
 
-void callback(char* topic, byte* payload, unsigned int length) {
-    String msg;
-    for(int i = 0; i < length; i++) {
-        msg += (char)payload[i];
-    }
-    
-    Serial.printf("topic : %s  |  msg : %s\n",topic, msg.c_str());
+    getHttp();
 
-    // servo
-    if(String(topic) == "esp32/servo/angle") {
-        int angle = msg.toInt();
-        angle = constrain(angle, 0, 180);
-        servo.write(angle);
-        if(angle >= 150) {
-            digitalWrite(LED_PIN, HIGH);
-            digitalWrite(BUZZER_PIN, HIGH);
-        }else {
-            digitalWrite(LED_PIN, LOW);
-            digitalWrite(BUZZER_PIN, LOW);
+    server.on("/", []() {
+        File file = LittleFS.open("/index.html", "r");
+        if(!file) {
+            server.send(404, "text/plain", "index.html not found");
+            return;
         }
-    }
+        server.streamFile(file, "text/html");
+        file.close();
+    });
 
-    // led
-    if(String(topic) == "esp32/led/state") {
-        if(msg == "ON") {
-            digitalWrite(LED_PIN, HIGH);
-        }else if(msg == "OFF") {
-            digitalWrite(LED_PIN, LOW);
-        }
-    }
+    server.on("/api", []() {
+        server.send(200, "application/json", jsonData);
+    });
 
-    //buzzer
-    if(String(topic) == "esp32/buzzer/state") {
-        if(msg == "ON") {
-            digitalWrite(BUZZER_PIN, HIGH);
-        }else if(msg == "OFF") {
-            digitalWrite(BUZZER_PIN, LOW);
-        }
-    }
-    
-}
+    server.begin();
 
-void reconnect() {
-    while(!client.connected()) {
-        Serial.print("connecting MQTT");
-        
-        String clientId = "ESP32-";
-        clientId += String((uint32_t)ESP.getEfuseMac(), HEX);
-
-        if(client.connect(clientId.c_str())) {
-            Serial.println("connected");
-
-            client.subscribe("esp32/servo/angle");
-            client.subscribe("esp32/led/state");
-            client.subscribe("esp32/buzzer/state");
-
-            Serial.println("subscribed");
-        }else {
-            Serial.print("failed, rc=");
-            Serial.println(client.state());
-            delay(5000);
-        }
-    }
-}
-
-void setup() {
-    Serial.begin(115200);
-    pinMode(LED_PIN, OUTPUT);
-    pinMode(BUZZER_PIN, OUTPUT);
-    servo.attach(SERVO_PIN);
-    servo.write(0);
-    setupWifi();
-
-    client.setServer(mqtt_server, 1883);
-    client.setCallback(callback);
 }
 
 void loop() {
-    if(!client.connected()) {
-        reconnect();
-    }
-    client.loop();
+    server.handleClient();
 }
+

@@ -4,3 +4,4 @@
 .vscode/launch.json
 .vscode/ipch
 test.mjs
+api_key.txt
