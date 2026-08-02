@@ -27,3 +27,5 @@ lib_deps =
 	bblanchon/ArduinoJson@^7.2.2    // JSON
     arduino-libraries/Servo@^1.3.0  // ARDUINO SERVO
 	miguelbalboa/MFRC522@^1.4.12	// RFID RC522
+	jrowberg/I2Cdevlib-Core@^1.0.1 // I2C DEVLIB
+	jrowberg/I2Cdevlib-MPU6050@^1.0.0 // I2C DEVLIB MPU
