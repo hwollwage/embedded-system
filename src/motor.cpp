@@ -37,7 +37,7 @@ void backward(uint8_t speed)
     analogWrite(ENB, speed);
 }
 
-void stopMotor()
+void stop()
 {
     analogWrite(ENA, 0);
     analogWrite(ENB, 0);

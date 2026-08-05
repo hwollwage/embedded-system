@@ -8,6 +8,6 @@ void motorInit();
 
 void forward(uint8_t speed);
 void backward(uint8_t speed);
-void stopMotor();
+void stop();
 
 #endif

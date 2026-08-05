@@ -1,0 +1,65 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Websocket</title>
+</head>
+
+<body>
+    <h1>WEBSOCKET CLIENT SIDE BROWSER NATIVE API</h1>
+</body>
+<script>
+    function wsConnect() {
+        const ws = new WebSocket("ws://localhost:8081");
+        ws.addEventListener('open', (event) => {
+            console.log("connected to ws server");
+            ws.send('hello server');
+        });
+
+        ws.addEventListener('message', (event) => {
+            console.log("ws message : ", event.data);
+        });
+
+        ws.addEventListener('error', (error) => {
+            console.log("ws error : ", error);
+        });
+
+        ws.addEventListener('close', (event) => {
+            console.log("connection closed", event.reason);
+        });
+    }
+    wsConnect();
+</script>
+
+</html> -->
+
+<!DOCTYPE html>
+<html>
+<body>
+<h1 id="name">hanzel</h1>
+<script>
+let name = document.getElementById("name");
+const ws = new WebSocket("ws://localhost:8081");
+
+ws.onopen = () => {
+    console.log("Connected!");
+    ws.send(`hello , ${name.textContent}`);
+};
+
+ws.onmessage = (e) => {
+    console.log("Server:", e.data);
+};
+
+ws.onclose = () => {
+    console.log("Closed");
+};
+
+ws.onerror = (e) => {
+    console.log("Error", e);
+};
+
+</script>
+</body>
+</html>
