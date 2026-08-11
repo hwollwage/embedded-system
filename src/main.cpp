@@ -1,85 +1,109 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
-#include <HTTPClient.h>
-#include <WiFi.h>
-// a = high val -> night | low val -> day
-// d = 0 (day) 1 (night)
+#include <Wire.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
 
-const char* ssid = "Wollwage";
-const char* pass = "ikanhias";
+Adafruit_MPU6050 mpu;
 
-IPAddress local_IP(192,168,0,169);
-IPAddress subnet(255,255,255,0);
-IPAddress gateway(192,168,0,1);
+constexpr uint8_t ENA = 16;
+constexpr uint8_t ENB = 17;
+constexpr uint8_t IN1 = 18;
+constexpr uint8_t IN2 = 19;
+constexpr uint8_t IN3 = 14;
+constexpr uint8_t IN4 = 25;
 
-WiFiClient client;
+// PID
+float Kp = 0.0f;
+float Ki = 0.0f;
+float Kd = 0.0f;
 
-constexpr uint8_t analogLightPin = 34;
-constexpr uint8_t digitalLightPin = 35;
+float targetAngle = 0.0f;
+float error = 0.0f;
+float prevError = 0.0f;
+float integral = 0.0f;
+float pidOutput = 0.0f;
+float angle = 0.0f;
 
-void setupWifi() {
-    WiFi.setAutoConnect(true);
-    WiFi.persistent(true);
+uint32_t prevMicros = 0;
 
-    if(!WiFi.config(local_IP, gateway, subnet)) {
-        Serial.println("STA Failed");
+void setMotor(int leftSpeed, int rightSpeed) {
+    leftSpeed = constrain(leftSpeed, -255, 255);
+    rightSpeed = constrain(rightSpeed, -255, 255);
+
+    if(leftSpeed > 0) {
+        digitalWrite(IN1, HIGH);
+        digitalWrite(IN2, LOW);
+    }else if(rightSpeed < 0) {
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, HIGH);
+    }else {
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, LOW);
     }
 
-    WiFi.begin(ssid, pass);
-    Serial.printf("Connecting to : %s\n", ssid);
-    while(WiFi.status() != WL_CONNECTED) {
-        Serial.print(".");
-        delay(500);
-    }
-    Serial.println("CONNECTED!");
-    Serial.printf("Your IP : %s\n", WiFi.localIP().toString().c_str());
+    analogWrite(ENB, abs(rightSpeed));
 }
 
-void postHttp() {
-    JsonDocument doc;
-    HTTPClient http;
-    if(WiFi.status() != WL_CONNECTED) {
-        Serial.println("Wifi disconnected, skipping POST");
-        return;
-    }
-    const char* apiUrl = "http://192.168.0.108:3000/api/light";
-    http.begin(client, apiUrl);
+void updateAngle(float dt) {
+    sensors_event_t accel, gyro, temp;
+    mpu.getEvent(&accel, &gyro, &temp);
 
-    short aVal = analogRead(analogLightPin);
-    bool dVal = digitalRead(digitalLightPin);
+    // accel angle : arctan(a^x, a^z) * 180 / pi -> div to get degree format
+    float accelAngle = atan2(accel.acceleration.x, accel.acceleration.z) * 180.0f / PI;
+    // gyro rate (kecepatan sudut) : theta * (180 / pi) -> div to get degree format
+    float gyroRate = gyro.gyro.y * 180.0f / PI;
+
+    angle = 0.98f * (angle + gyroRate * dt) + 0.02f * accelAngle;
+}
+
+float calculatePID(float dt) {
+    error = targetAngle - angle;
+    integral += error * dt;
+    integral = constrain(integral, -100.0f, 100.0f);
+
+    float derivative = (error - prevError) / dt;
+    float output = Kp * error + Ki * integral + Kd * derivative;
     
-    JsonObject wifi = doc["wifi"].to<JsonObject>();
-
-    doc["analog_light"] = aVal;
-    doc["digital_light"] = dVal;
-    doc["uptime"] = millis();
-
-    wifi["rssi"] = WiFi.RSSI();
-    wifi["bssid"] = WiFi.BSSIDstr();
-
-    String body;
-    serializeJson(doc, body);
-
-    http.addHeader("Content-Type", "application/json");
-    
-    int httpCode = http.POST(body);
-    if(httpCode > 0) {
-        Serial.println(httpCode);
-        Serial.println(http.getString());
-    }else {
-        Serial.printf("error : %s\n", http.errorToString(httpCode).c_str());
-    }
-    http.end();
+    return output;
 }
 
 void setup() {
     Serial.begin(115200);
-    setupWifi();
-    pinMode(analogLightPin, INPUT);
-    pinMode(digitalLightPin, INPUT);
+    pinMode(ENA, OUTPUT);
+    pinMode(ENB, OUTPUT);
+    pinMode(IN1, OUTPUT);
+    pinMode(IN2, OUTPUT);
+    pinMode(IN3, OUTPUT);
+    pinMode(IN4, OUTPUT);
+
+    setMotor(0, 0);
+
+    Wire.begin();
+    if(!mpu.begin()) {
+        Serial.println("mpu not found");
+        for(;;);
+    }
+    Serial.println("mpu ok");
+
+    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+
+    prevMicros = micros();
 }
 
 void loop() {
-    postHttp();
-    delay(4000);
+    uint32_t now = micros();
+
+    float dt = (now - prevMicros) / 1000000.0f; // 1_000_000
+    if(dt < 0.005f) return; // 200Hz, yknow what im sayin
+    prevMicros = now;
+
+    updateAngle(dt);
+    pidOutput = calculatePID(dt);
+
+    int motorOutput = constrain((int)pidOutput, -255, 255);
+
+    setMotor(motorOutput, motorOutput);
+
+    Serial.printf("angle ; %f | pid ; %f\n", angle, pidOutput);
 }

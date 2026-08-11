@@ -11,6 +11,8 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "mysql2": "^3.23.2"
+    "mongoose": "^9.9.2",
+    "mysql2": "^3.23.2",
+    "ws": "^8.21.3"
   }
 }

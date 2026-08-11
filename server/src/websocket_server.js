@@ -1,19 +1,34 @@
-// const wss = require("websocketserver");
 const { WebSocketServer } = require("ws");
+const express = require("express");
+
+const app = express();
 const wss = new WebSocketServer({ port: 8081 });
 
-console.log("Server listening on ws://localhost:8081");
+let lastMessage = null;
 
 wss.on("connection", (ws) => {
-    console.log("Client connected");
+    console.log("WebSocket client connected");
+
     ws.send("Welcome!");
 
     ws.on("message", (message) => {
-        console.log(message.toString());
-        ws.send(message.toString());
+        lastMessage = message.toString();
+        console.log("WebSocket message:", lastMessage);
+        ws.send(lastMessage);
     });
 
     ws.on("close", () => {
-        console.log("Client disconnected");
+        console.log("WebSocket client disconnected");
     });
+});
+
+app.get("/", (req, res) => {
+    res.json({
+        message: lastMessage
+    });
+});
+
+app.listen(3000, () => {
+    console.log("Express listening on http://localhost:3000");
+    console.log("WebSocket listening on ws://localhost:8081");
 });
