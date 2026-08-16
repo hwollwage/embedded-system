@@ -1,6 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const authRoutes = require("./routes/auth.routes");
 
 const app = express();
 
@@ -15,28 +15,7 @@ mongoose
         console.log("error : ", err);
     });
 
-const userSchema = new mongoose.Schema({
-    username: String,
-    password: String
-});
-
-const User = mongoose.model("User", userSchema);
-
-app.post("/register", async (req, res) => {
-    const {username,password} = req.body;
-    const hashedPassword = await bcrypt.hash(password,10);
-    const user = new User({
-        username: username,
-        password: hashedPassword
-    });
-
-    await user.save();
-
-    res.json({
-        message: "user registered"
-    });
-});
-
+app.use("/auth", authRoutes);
 app.listen(3000, () => {
-    console.log("server run 3000");
+    console.log("port 3000");
 });
