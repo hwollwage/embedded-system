@@ -80,33 +80,24 @@ button:active{
 
 let interval = null;
 
-function startCommand(cmd)
-{
+function startCommand(cmd) {
     fetch("/" + cmd);
-
     interval = setInterval(() => {
         fetch("/" + cmd);
     }, 100);
 }
 
-function stopCommand()
-{
+function stopCommand() {
     clearInterval(interval);
     interval = null;
-
     fetch("/stop");
 }
 
-function bind(id)
-{
+function bind(id) {
     const btn = document.getElementById(id);
-
     btn.onpointerdown = () => startCommand(id);
-
     btn.onpointerup = stopCommand;
-
     btn.onpointerleave = stopCommand;
-
     btn.onpointercancel = stopCommand;
 }
 
@@ -118,6 +109,5 @@ bind("backward");
 document.getElementById("stop").onclick = stopCommand;
 
 </script>
-
 </body>
 </html>

@@ -90,3 +90,22 @@ export const updateGasData = async (req,res) => {
         });
     }
 }
+
+// === POST ===
+// app.post(`/users`, async (req, res) => {
+//     const user = new User({
+//         name: req.body.name,
+//         age: req.body.age,
+//         email: req.body.email
+//     });
+
+//     await user.save();
+//     res.json(user);
+// });
+
+
+// === GET ===
+// app.get(`/users`, async (req, res) => {
+//     const users = await User.find();
+//     res.json(users);
+// });
