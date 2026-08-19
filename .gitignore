@@ -4,6 +4,9 @@ api_key.txt
 # API_KEY_AXX = c0ns1d3rk1ll11n9y0s3lfng4-g3t4fk1n9lif3
 server/node_modules/
 server/.env
+server/gas_sensor/.env
+server/login/.env
+server/supermarket/.env
 server/temp/
 server/mongodb_playground/
 

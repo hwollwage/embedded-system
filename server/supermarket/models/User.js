@@ -9,18 +9,21 @@ const userSchema = new mongoose.Schema({
         minlength: 3,
         maxlength: 30
     },
-
     password: {
         type: String,
         required: true,
         select: false
     },
-
+    email: {
+        type: String,
+        require: true,
+        unique: true,
+    },
     role: {
         type: String,
-        enum: ["user", "admin"],
+        enum: ["user", "admin",],
         default: "user"
-    }
+    }   
 });
 
 const User = mongoose.model("User", userSchema);

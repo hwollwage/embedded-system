@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROOT GAS</title>
+    <style>
+        table {width: 100%;}
+        table, th, td {border: 1px solid;}
+        tbody, td {text-align: center;}
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">GAS MONITOR</h1>
+    <table>
+        <thead>
+            <tr>Device ID</tr>
+            <tr>Gas Value</tr>
+            <tr>Alarm</tr>
+            <tr>IP Address</tr>
+            <tr>RSSI</tr>
+            <tr>Uptime</tr>
+            <tr>Free Heap</tr>
+        </thead>
+        <tbody>
+            <tr></tr>
+        </tbody>
+    </table>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROOT gas</title>
+    <style>
+        table {
+            width: 100%;
+        }
+        table, th, td {
+            border: 1px solid;
+        }
+        tbody, td {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">light monitor</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>id</th>
+                <th>light level</th>
+                <th>light alarm</th>
+                <th>RSSI</th>
+                <th>BSSID</th>
+            </tr>
+        </thead>
+        <tbody id="data-table-body">
+            <tr>
+                <td colspan="5">Loading data...</td>
+                
+            </tr>
+        </tbody>
+    </table>
+</body>
+<script>
+    fetch('/api/light')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = '';
+            if(data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5">No data available</td></tr>';
+                return;
+            }
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.id}</td>
+                    <td>${row.analog_light}</td>
+                    <td>${row.digital_light}</td>
+                    <td>${row.rssi ?? 'N/A'}</td>
+                    <td>${row.bssid ?? 'N/A'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        })
+        .catch(err => {
+            console.error('error fetch data : ',err);
+        });
+</script>
+</html> -->
