@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROOT GAS</title>
+    <style>
+        table {width: 100%;}
+        table, th, td {border: 1px solid;}
+        tbody, td {text-align: center;}
+    </style>
+</head>
+
+<body>
+    <h1 style="text-align: center;">GAS MONITOR</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Device ID</th>
+                <th>Gas Value</th>
+                <th>Alaram</th>
+                <th>IP Address</th>
+                <th>RSSI</th>
+                <th>Uptime</th>
+                <th>Free Heap</th>
+            </tr>
+        </thead>
+        <tbody id="tbody">
+            <tr>
+                <td colspan="100%">loading...</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+<script>
+    async function loadData() {
+        try {
+            const response = await fetch("/api/gas");
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log("API response:", result);
+            const gas = result.data;
+
+            const tbody = document.getElementById("tbody");
+
+            tbody.innerHTML = "";
+
+            if (gas.length === 0) {
+                tbody.innerHTML = `
+                <tr>
+                    <td colspan="7">No data available</td>
+                </tr>
+            `;
+                return;
+            }
+
+            gas.forEach(device => {
+                const row = document.createElement("tr");
+
+                row.innerHTML = `
+                <td>${device.deviceId}</td>
+                <td>${device.gasValue}</td>
+                <td>${device.alarm ? "ON" : "OFF"}</td>
+                <td>${device.ipAddress}</td>
+                <td>${device.wifiRSSI} dBm</td>
+                <td>${device.uptime}</td>
+                <td>${device.freeHeap}</td>
+            `;
+
+                tbody.appendChild(row);
+            });
+
+        } catch (err) {
+            console.error("Error loading gas data:", err);
+        }
+    }
+
+    loadData();
+    setInterval(loadData, 4000);   
+</script>
+
+</html>

@@ -2,8 +2,4 @@
 .vscode/
 server/node_modules/
 server/.env
-server/gas_sensor/.env
-server/login/.env
-server/supermarket/.env
-server/temp/
-server/mongodb_playground/
+server/mongodb_playground

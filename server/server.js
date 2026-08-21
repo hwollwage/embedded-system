@@ -1,7 +1,8 @@
 import "dotenv/config";
 import express from "express";
 
-import connectDB from "./db.js";
+import redisClient from "./config/redis.js";
+import connectDB from "./config/db.js";
 import dashboardRoute from "./routes/dashboard.route.js";
 import gasRoute from "./routes/gas.route.js";
 

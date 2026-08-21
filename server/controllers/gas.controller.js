@@ -1,9 +1,43 @@
 import Gas from "../models/gas.model.js";
+import redisClient from "../config/redis.js";
+
+// GET LATEST DATA REDIS
+export const getLatestGasData = async (req, res) => {
+    try {
+        const keys = await redisClient.keys("gas:*");
+        const data = [];
+
+        for(const key of keys) {
+            const value = await redisClient.get(key);
+            if(value) {
+                data.push(JSON.parse(value));
+            }
+        }
+
+        res.status(200).json({
+            message: "latest gas data retrieved",
+            data
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            message: "failed to get latest gas data",
+            error: err.message
+        });
+    }
+}
 
 // POST CREATE
 export const createGasData = async (req, res) => {
     try {
         const gas = await Gas.create(req.body);
+
+        /// REDIS
+
+        await redisClient.set(
+            `gas:${req.body.deviceId}`, JSON.stringify(req.body)
+        );
+
         res.status(201).json({
             message: "gas data created",
             data: gas
@@ -20,7 +54,7 @@ export const createGasData = async (req, res) => {
 // GET DATA
 export const getGasData = async (req,res) => {
     try {
-        const gasData = await Gas.find();
+        const gasData = await Gas.find().sort({ _id: -1 });
 
         res.status(200).json({
             message: "gas data retrieved",
@@ -64,9 +98,6 @@ export const updateGasData = async (req,res) => {
     try {
         const { id } = req.params;
         const gas = await Gas.findByIdAndUpdate(
-            // {_id: id},
-            // req.body,
-            // {returnDocument: "after"}
             id,
             req.body,
             {returnDocument: "after"}
