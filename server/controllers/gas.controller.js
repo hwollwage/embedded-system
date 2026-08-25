@@ -1,31 +1,4 @@
 import Gas from "../models/gas.model.js";
-import redisClient from "../config/redis.js";
-
-// GET LATEST DATA REDIS
-export const getLatestGasData = async (req, res) => {
-    try {
-        const keys = await redisClient.keys("gas:*");
-        const data = [];
-
-        for(const key of keys) {
-            const value = await redisClient.get(key);
-            if(value) {
-                data.push(JSON.parse(value));
-            }
-        }
-
-        res.status(200).json({
-            message: "latest gas data retrieved",
-            data
-        });
-
-    } catch (err) {
-        res.status(500).json({
-            message: "failed to get latest gas data",
-            error: err.message
-        });
-    }
-}
 
 // POST CREATE
 export const createGasData = async (req, res) => {
