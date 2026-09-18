@@ -5,11 +5,11 @@ export const createGasData = async (req, res) => {
     try {
         const gas = await Gas.create(req.body);
 
-        /// REDIS
+        // /// REDIS
 
-        await redisClient.set(
-            `gas:${req.body.deviceId}`, JSON.stringify(req.body)
-        );
+        // await redisClient.set(
+        //     `gas:${req.body.deviceId}`, JSON.stringify(req.body)
+        // );
 
         res.status(201).json({
             message: "gas data created",

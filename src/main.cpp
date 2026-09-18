@@ -1,71 +1,155 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
+#include <SPI.h>
+#include <RF24.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <ArduinoJson.h>
+
+// =========================
+// NRF24
+// =========================
+
+const uint8_t CE_PIN = 4;
+const uint8_t CSN_PIN = 5;
+
+RF24 radio(CE_PIN, CSN_PIN);
+
+// =========================
+// WiFi
+// =========================
 
 const char* ssid = "Wollwage";
 const char* pass = "ikanhias";
 
-constexpr uint8_t GAS_ANALOG_PIN = 32;
-constexpr uint8_t GAS_DIGITAL_PIN = 25;
+// =========================
+// API
+// =========================
 
-constexpr uint32_t GAS_THRESHOLD = 2500;
+const char* serverURL = "http://192.168.1.100:3000/api/radio";
 
-HTTPClient http;
+// =========================
+// Device
+// =========================
 
-void postHttp(bool alarm) {
-    JsonDocument doc;
-    String url = "http://192.168.0.108:3000/api/gas";
-    http.begin(url);
+const byte addr[6] = "REG01";
 
-    doc["deviceId"] = ESP.getEfuseMac();
-    doc["gasValue"] = analogRead(GAS_ANALOG_PIN);
-    doc["alarm"] = alarm;
-    doc["ipAddress"] = WiFi.localIP().toString().c_str();
-    doc["wifiRSSI"] = WiFi.RSSI();
-    doc["uptime"] = millis();
-    doc["freeHeap"] = ESP.getFreeHeap();
 
-    String body;
-    serializeJson(doc, body);
+// =====================================================
+// SCAN RADIO
+// =====================================================
 
-    http.addHeader("Content-Type", "application/json");
+void scanRadio() {
 
-    int httpCode = http.POST(body);
-    if(httpCode > 0) {
-        Serial.println(httpCode);
-        Serial.println(http.getString());
-    }else {
-        printf("http error: %s\n", http.errorToString(httpCode).c_str());
+    Serial.println("Starting scan...");
+
+    for (int channel = 0; channel <= 125; channel++) {
+
+        radio.setChannel(channel);
+
+        int hits = 0;
+
+        for (int i = 0; i < 100; i++) {
+
+            if (radio.testRPD()) {
+                hits++;
+            }
+
+            delay(2);
+        }
+
+        Serial.printf(
+            "Channel: %3d | Hits: %d/100\n",
+            channel,
+            hits
+        );
     }
 
-    http.end();
+    Serial.println("Scan complete.");
 }
+
+
+// =====================================================
+// SETUP
+// =====================================================
 
 void setup() {
+
     Serial.begin(115200);
+
+    delay(1000);
+
+    Serial.println();
+    Serial.println("ESP32 starting...");
+
+
+    // =========================
+    // WIFI
+    // =========================
+
+    Serial.println("Connecting WiFi...");
+
     WiFi.begin(ssid, pass);
-    WiFi.setAutoReconnect(true);
-    WiFi.persistent(true);
-    while(WiFi.status() != WL_CONNECTED) {
+
+    while (WiFi.status() != WL_CONNECTED) {
+
         Serial.print(".");
+
         delay(500);
     }
-    Serial.printf("\nyour ip: %s\n", WiFi.localIP().toString().c_str());
-    pinMode(GAS_ANALOG_PIN, INPUT);
-    pinMode(GAS_DIGITAL_PIN, INPUT);
+
+    Serial.println();
+    Serial.println("WiFi connected!");
+
+    Serial.printf(
+        "IP Address: %s\n",
+        WiFi.localIP().toString().c_str()
+    );
+
+
+    // =========================
+    // NRF24 BEGIN
+    // =========================
+
+    Serial.println("Starting NRF24...");
+
+    if (!radio.begin()) {
+
+        Serial.println("NRF24 NOT FOUND!");
+
+        while (true) {
+            delay(1000);
+        }
+    }
+
+    Serial.println("NRF24 OK");
+
+
+    // =========================
+    // NRF24 CONFIG
+    // =========================
+
+    radio.setPALevel(RF24_PA_LOW);
+
+    radio.setDataRate(RF24_1MBPS);
+
+    radio.setCRCLength(RF24_CRC_16);
+
+    // Masuk listening mode
+    radio.startListening();
+
+
+    // =========================
+    // START SCAN
+    // =========================
+
+    scanRadio();
 }
 
+
+// =====================================================
+// LOOP
+// =====================================================
+
 void loop() {
-    int gasAnalogValue = analogRead(GAS_ANALOG_PIN);
-    int gasDigitalValue = digitalRead(GAS_DIGITAL_PIN);
-    bool alarm = gasAnalogValue >= GAS_THRESHOLD;
 
-    Serial.printf("\nGas Analog: %d\n", gasAnalogValue);
-    Serial.printf("Gas Digital: %d\n", gasDigitalValue);
-    Serial.printf("Alarm: %s\n", alarm ? "ON" : "OFF");
-    
-    postHttp(alarm);
-
-    delay(4000);
 }

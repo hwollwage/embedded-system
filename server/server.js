@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express from "express";
 
-import redisClient from "./config/redis.js";
 import connectDB from "./config/db.js";
 import dashboardRoute from "./routes/dashboard.route.js";
 import gasRoute from "./routes/gas.route.js";
@@ -13,6 +12,10 @@ const app = express();
 connectDB();
 
 app.use(express.json());
+
+app.head('/', (req,res) => {
+	res.status(200).end();
+});
 
 app.use("/", dashboardRoute)
 app.use("/api/gas", gasRoute);

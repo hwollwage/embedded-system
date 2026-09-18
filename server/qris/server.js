@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express, { response } from "express";
+import express from "express";
 
 const app = express();
 

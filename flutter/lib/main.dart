@@ -1,11 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_esp32/pages/home.dart';
-import 'package:flutter_esp32/pages/profile.dart';
-import 'package:flutter_esp32/pages/setting.dart';
+import 'dart:convert';
 
-void main() {
-  runApp(const MyApp());
-}
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+void main() => runApp(const MyApp());
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -15,53 +13,58 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  int currentIdx = 1;
+  
+  List<dynamic> users = [];
 
-  final List<Widget> pages = const [
-    SettingPage(),
-    HomePage(),
-    ProfilePage(),
-  ];
-
-  final List<String> titles = [
-    "Setting",
-    "Home",
-    "Profile",
-  ];
+  void fetchData() async {
+    debugPrint("fetch data");
+    const url = "https://jsonplaceholder.typicode.com/users";
+    final uri = Uri.parse(url);
+    final response = await http.get(uri);
+    final body = response.body;
+    final json = jsonDecode(body);
+    
+    setState(() {
+      users = json;
+    });
+  }
   
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
+        appBar: AppBar(
+          title: Text("flutter rest api"),
+          centerTitle: true,
+        ),
 
-        body: pages[currentIdx],
+        body: users.isEmpty
+          ? const Center(child: Text("press button to fetch"),)
+          : ListView.builder(
+            itemCount: users.length,
+            itemBuilder: (context, index) {
+              final user = users[index];
+              
+              final name = user['name'];
+              final email = user['email'];
 
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: currentIdx,
-          onTap: (value) {
-            setState(() {
-              currentIdx = value;
-            });
-          },
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(currentIdx == 0 ? Icons.settings : Icons.settings_outlined),
-              label: "Setting",
-            ),
+              return ListTile(
+                leading: CircleAvatar(
+                  child: Text("${index+1}"),
+                ),
+                title: Text(name.toString()),
+                subtitle: Text(email.toString()),
+              );
+            },
+          ),
 
-            BottomNavigationBarItem(
-              icon: Icon(currentIdx == 1 ? Icons.home : Icons.home_outlined),
-              label: "Home",
-            ),
-
-            BottomNavigationBarItem(
-              icon: Icon(currentIdx == 2 ? Icons.people : Icons.people_outline),
-              label: "Profile",
-            ),
-          ],
+        floatingActionButton: FloatingActionButton(
+          onPressed: fetchData,
+          child: const Icon(Icons.download),
         ),
       ),
     );
   }
 }
+
