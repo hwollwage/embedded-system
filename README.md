@@ -1,2 +1,2 @@
-# hanya orang biasa yang sedang belajar embedded system
-## pemula bukan pemalu
+my iot
+when yah...
